@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import mysql.connector as mariadb
 import requests
 import datetime
@@ -72,6 +72,24 @@ def get_perfiles():
         conn = mariadb.connect(user='root', password='root', database='crypto')
         cur = conn.cursor()
         sql = 'SELECT * FROM profile'
+        cur.execute(sql)
+        columns = [column[0] for column in cur.description]
+        rows = [dict(zip(columns, row)) for row in cur.fetchall()]
+        return jsonify(rows)
+    except mariadb.Error as e:
+        print(f"Error: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/autenticarse', methods=['GET'])
+def autenticar():
+    try:
+        name = request.args.get("user")
+        passw = request.args.get("passw")
+        conn = mariadb.connect(user='root', password='root', database='crypto')
+        cur = conn.cursor()
+        sql = f"SELECT COUNT(*) as ocurrencias FROM profile WHERE name = '{name}' AND pass = '{passw}';"
         cur.execute(sql)
         columns = [column[0] for column in cur.description]
         rows = [dict(zip(columns, row)) for row in cur.fetchall()]

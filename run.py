@@ -87,7 +87,7 @@ def autenticar():
     try:
         name = request.args.get("user")
         passw = request.args.get("passw")
-        conn = sql.connect(user='root', password='root', database='crypto')
+        conn = sql.connect(user='zequi ', password='Zequi!2000', database='coin')
         cur = conn.cursor()
         sql = f"SELECT COUNT(*) as ocurrencias FROM profile WHERE name = '{name}' AND pass = '{passw}';"
         cur.execute(sql)

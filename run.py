@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-import mysql.connector as mariadb
+import mysql.connector as mysql
 import requests
 import datetime
 
@@ -69,14 +69,14 @@ def obtener_historial_precio_moneda(symbol):
 @app.route('/perfiles', methods=['GET'])
 def get_perfiles():
     try:
-        conn = mariadb.connect(user='root', password='root', database='crypto')
+        conn = sql.connect(user='zequi ', password='Zequi!2000', database='coin')
         cur = conn.cursor()
-        sql = 'SELECT * FROM profile'
+        sql = 'SELECT * FROM usuario'
         cur.execute(sql)
         columns = [column[0] for column in cur.description]
         rows = [dict(zip(columns, row)) for row in cur.fetchall()]
         return jsonify(rows)
-    except mariadb.Error as e:
+    except sql.Error as e:
         print(f"Error: {e}")
     finally:
         cur.close()
@@ -87,14 +87,14 @@ def autenticar():
     try:
         name = request.args.get("user")
         passw = request.args.get("passw")
-        conn = mariadb.connect(user='root', password='root', database='crypto')
+        conn = sql.connect(user='root', password='root', database='crypto')
         cur = conn.cursor()
         sql = f"SELECT COUNT(*) as ocurrencias FROM profile WHERE name = '{name}' AND pass = '{passw}';"
         cur.execute(sql)
         columns = [column[0] for column in cur.description]
         rows = [dict(zip(columns, row)) for row in cur.fetchall()]
         return jsonify(rows)
-    except mariadb.Error as e:
+    except sql.Error as e:
         print(f"Error: {e}")
     finally:
         cur.close()

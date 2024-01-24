@@ -1,9 +1,11 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 import mysql.connector as mysql
 import requests
 import datetime
 API_KEY = '3bb16e1c01fbcfe31c6a854789ca81e14fed82ab0b0a69afeeb0c9db849fb6b8'
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/top_monedas')
 def mostrar_top_monedas():
@@ -66,35 +68,32 @@ def obtener_historial_precio_moneda(symbol):
         return None
 
 @app.route('/login', methods=['POST'])
-def verify_user():
+def verify_usuario():
     perfiles = get_perfiles()
-    data = request.get_json()
-    print(perfiles)
-    print(data)
+    credenciales = request.get_json()
+    print('recibi esto:')
+    print(credenciales)
     for perfil in perfiles:
-        if perfil == data:
+        if perfil == credenciales:
             return {"success": True}
     return {"success": False}
+
 def get_perfiles():
     conn = None
     cur = None
-
     try:
         conn = mysql.connect(user='zequi', password='Zequi!-2000', database='coin')
         cur = conn.cursor()
         sql_query = 'SELECT nombre, clave FROM usuario'
         cur.execute(sql_query)
         columns = [column[0] for column in cur.description]
-        rows = [dict(zip(columns, row)) for row in cur.fetchall()]
-        return rows
+        return [dict(zip(columns, row)) for row in cur.fetchall()]
     except mysql.Error as e:
         print(f"Error: {e}")
         return jsonify({"error": f"{e}"})
     finally:
-        # Verificar si el cursor está inicializado antes de cerrarlo
         if cur:
             cur.close()
-        # Verificar si la conexión está abierta antes de cerrarla
         if conn:
             conn.close()
 

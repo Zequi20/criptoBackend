@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request
 import mysql.connector as mysql
 import requests
 import datetime
-
 API_KEY = '3bb16e1c01fbcfe31c6a854789ca81e14fed82ab0b0a69afeeb0c9db849fb6b8'
 app = Flask(__name__)
 
@@ -66,35 +65,52 @@ def obtener_historial_precio_moneda(symbol):
     else:
         return None
 
-@app.route('/perfiles', methods=['GET'])
+@app.route('/login', methods=['POST'])
+def verify_user():
+    perfiles = get_perfiles()
+    data = request.get_json()
+    print(perfiles)
+    print(data)
+    for perfil in perfiles:
+        if perfil == data:
+            return {"success": True}
+    return {"success": False}
 def get_perfiles():
+    conn = None
+    cur = None
+
     try:
-        conn = sql.connect(user='zequi ', password='Zequi!2000', database='coin')
+        conn = mysql.connect(user='zequi', password='Zequi!-2000', database='coin')
         cur = conn.cursor()
-        sql = 'SELECT * FROM usuario'
-        cur.execute(sql)
+        sql_query = 'SELECT nombre, clave FROM usuario'
+        cur.execute(sql_query)
         columns = [column[0] for column in cur.description]
         rows = [dict(zip(columns, row)) for row in cur.fetchall()]
-        return jsonify(rows)
-    except sql.Error as e:
+        return rows
+    except mysql.Error as e:
         print(f"Error: {e}")
+        return jsonify({"error": f"{e}"})
     finally:
-        cur.close()
-        conn.close()
+        # Verificar si el cursor está inicializado antes de cerrarlo
+        if cur:
+            cur.close()
+        # Verificar si la conexión está abierta antes de cerrarla
+        if conn:
+            conn.close()
 
 @app.route('/autenticarse', methods=['GET'])
 def autenticar():
     try:
         name = request.args.get("user")
         passw = request.args.get("passw")
-        conn = sql.connect(user='zequi ', password='Zequi!2000', database='coin')
+        conn = mysql.connect(user='zequi', password='Zequi!-2000', database='coin')
         cur = conn.cursor()
         sql = f"SELECT COUNT(*) as ocurrencias FROM profile WHERE name = '{name}' AND pass = '{passw}';"
         cur.execute(sql)
         columns = [column[0] for column in cur.description]
         rows = [dict(zip(columns, row)) for row in cur.fetchall()]
         return jsonify(rows)
-    except sql.Error as e:
+    except mysql.Error as e:
         print(f"Error: {e}")
     finally:
         cur.close()

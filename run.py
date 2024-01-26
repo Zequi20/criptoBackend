@@ -1,11 +1,24 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import mysql.connector as mysql
 import requests
 import datetime
+import mysql.connector
+
 API_KEY = '3bb16e1c01fbcfe31c6a854789ca81e14fed82ab0b0a69afeeb0c9db849fb6b8'
+
 app = Flask(__name__)
 CORS(app)
+
+# Configure MySQL connection
+db_config = {
+    'user': 'zequi',
+    'password': 'Zequi!-2000',
+    'host': 'localhost',
+    'database': 'coin',
+    'autocommit': True
+}
+
+conn = mysql.connector.connect(**db_config)
 
 @app.route('/top_monedas')
 def mostrar_top_monedas():
@@ -36,7 +49,6 @@ def filtrar_datos(elem):
         "market_cap": elem["RAW"]["USD"]["MKTCAP"],
         "volume": elem["RAW"]["USD"]["VOLUME24HOUR"],
     }
-
 
 @app.route('/historial_precio/<symbol>')
 def obtener_historial_precio(symbol):
@@ -71,51 +83,69 @@ def obtener_historial_precio_moneda(symbol):
 def verify_usuario():
     perfiles = get_perfiles()
     credenciales = request.get_json()
-    print('recibi esto:')
-    print(credenciales)
     for perfil in perfiles:
         if perfil == credenciales:
             return {"success": True}
     return {"success": False}
 
 def get_perfiles():
-    conn = None
-    cur = None
+    cur = conn.cursor()
     try:
-        conn = mysql.connect(user='zequi', password='Zequi!-2000', database='coin')
-        cur = conn.cursor()
         sql_query = 'SELECT nombre, clave FROM usuario'
         cur.execute(sql_query)
         columns = [column[0] for column in cur.description]
         return [dict(zip(columns, row)) for row in cur.fetchall()]
-    except mysql.Error as e:
+    except mysql.connector.Error as e:
         print(f"Error: {e}")
         return jsonify({"error": f"{e}"})
     finally:
         if cur:
             cur.close()
-        if conn:
-            conn.close()
 
-@app.route('/autenticarse', methods=['GET'])
-def autenticar():
+@app.route('/register', methods=['POST'])
+def registrar():
+    credenciales = request.get_json()
+    registro = registrar_perfil(credenciales)
+    print(registro)
+    return registro
+
+def registrar_perfil(credencial):
+    if 'nombre' not in credencial or 'clave' not in credencial:
+        return {"error": "Faltan credenciales"}
+
+    # Verificar si el usuario ya existe
+    if usuario_existe(credencial['nombre']):
+        return {"error": "El usuario ya existe"}
+
     try:
-        name = request.args.get("user")
-        passw = request.args.get("passw")
-        conn = mysql.connect(user='zequi', password='Zequi!-2000', database='coin')
         cur = conn.cursor()
-        sql = f"SELECT COUNT(*) as ocurrencias FROM profile WHERE name = '{name}' AND pass = '{passw}';"
-        cur.execute(sql)
-        columns = [column[0] for column in cur.description]
-        rows = [dict(zip(columns, row)) for row in cur.fetchall()]
-        return jsonify(rows)
-    except mysql.Error as e:
+        sql_query = "INSERT INTO usuario (nombre, clave) VALUES (%s, %s);"
+        cur.execute(sql_query, (credencial['nombre'], credencial['clave']))
+        conn.commit()
+    except mysql.connector.Error as e:
         print(f"Error: {e}")
+        conn.rollback()
+        return {"error": str(e)}
     finally:
-        cur.close()
-        conn.close()
+        if cur:
+            cur.close()
+
+    return {"success": True}
+
+def usuario_existe(nombre_usuario):
+    try:
+        cur = conn.cursor()
+        sql_query = "SELECT COUNT(*) FROM usuario WHERE nombre = %s"
+        cur.execute(sql_query, (nombre_usuario,))
+        count = cur.fetchone()[0]
+        return count > 0
+    except mysql.connector.Error as e:
+        print(f"Error al verificar si el usuario existe: {e}")
+        return False
+    finally:
+        if cur:
+            cur.close()
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-

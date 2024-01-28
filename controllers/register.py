@@ -1,6 +1,6 @@
 from conections.db_conector import conn, mysql
 
-def registrar_perfil(credencial):
+def registrar_usuario(credencial):
     if 'nombre' not in credencial or 'clave' not in credencial:
         return {"error": "Faltan credenciales"}
 

@@ -20,8 +20,8 @@ def registrar_seguimiento(seguimiento):
         return {"error": "Faltan credenciales"}
     try:
         cur = conn.cursor()
-        sql_query = "INSERT INTO seguimiento (moneda, usuario, monto, fecha_hora) VALUES (%s, %s, %s, %s);"
-        cur.execute(sql_query, (seguimiento['moneda'], seguimiento['usuario'], seguimiento['monto'], seguimiento['fecha_hora']))
+        sql_query = "INSERT INTO seguimiento (moneda, usuario, monto) VALUES (%s, %s, %s);"
+        cur.execute(sql_query, (seguimiento['moneda'], seguimiento['usuario'], seguimiento['monto']))
         conn.commit()
     except mysql.connector.Error as e:
         print(f"Error: {e}")
